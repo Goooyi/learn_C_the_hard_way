@@ -4,7 +4,7 @@
 
 int normal_copy(char *from, char *to, int count)
 {
-    int i = 0;
+   int i = 0;
 
     for (i = 0; i < count; i++) {
         to[i] = from[i];
