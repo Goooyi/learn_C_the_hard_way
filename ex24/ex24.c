@@ -1,7 +1,7 @@
 #include <stab.h>
 #include "dbg.h"
 
-#define MAX_DATA 100
+#define MAX_DATA 12
 
 typedef enum EyeColor {
 	BLUE_EYES, GREEN_EYES, BROWN_EYES,
@@ -49,12 +49,12 @@ int main(int argc, char *argv[])
 	rc = fscanf(stdin, "%d", &eyes);
 	check(rc>0, "You have to enter a number");
 
-	you.eyes = eyes - 1;
+	you.eyes = (EyeColor)(eyes - 1);
 	check(you.eyes <= OTHER_EYES && you.eyes >= 0, "Do it right, that's not an option.");
 
 	printf("How muc do you make an hour?");
 	rc = fscanf(stdin, "%f", &you.income);
-	check(rc > 0, "Enter a afloating point number.");
+	check(rc > 0, "Enter a a floating point number.");
 
 	printf("---- RESULTS ----\n");
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
 
 	return 0;
+	
 error:
-
 	return -1;
 }
