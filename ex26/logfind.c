@@ -56,11 +56,14 @@ int strEndWith(const char *str1, const char *str2) {
 // return a array of founded line
 // DONE: Handle EOF of fgets
 // DONE: return 2-d array pointer to save line number and pos of line
+// TODO: compare to author's scan_file, should do better naming
+// TODO: should return int **, even though no error
 int *findStr(const char *target, const char* file)
 {
     FILE *curFP = fopen(file, "r");
     check(curFP != NULL, "open file %s failed", file);
 
+    // TODO even though here store should be int ** but no error?
     int *store = (int**)malloc(sizeof(int*) * MAX_FIND);
     for (int i = 0; i < MAX_FIND; i++) {
         store[i] = NULL;
@@ -103,6 +106,7 @@ error:
 }
 
 // TODO: only glob pattern saved in .logfind
+// TODO: when do this, you need to trim the '/n' added by fgets()
 int listFiles(char* logfindDir, glob_t *pglob) {
     
     int i = 0;
