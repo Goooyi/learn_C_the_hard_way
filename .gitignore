@@ -1,3 +1,5 @@
 .nova
 *.dSYM
 .vscode
+replit.nix
+.ccls-cache/
