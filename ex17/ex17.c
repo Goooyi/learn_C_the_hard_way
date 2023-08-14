@@ -13,7 +13,7 @@ struct Address {
     char name[MAX_DATA];
     char email[MAX_DATA];
 };
-
+  
 struct Database {
     struct Address rows[MAX_ROWS];
 };
