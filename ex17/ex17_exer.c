@@ -13,7 +13,6 @@ typedef struct Address {
   int set;
   char name[MAX_DATA];
   char email[MAX_DATA];
-  void *some_data = malloc(MAX_DATA * sizeof(char));
 } Address;
 
 typedef struct Database {
@@ -27,7 +26,7 @@ typedef struct Connection {
 } Connection;
 
 void die(const char *err_msg) {
-  // why this if else?
+  // TODO why this if else?
   if (errno) {
     perror(err_msg);
   } else {
@@ -37,96 +36,104 @@ void die(const char *err_msg) {
 }
 
 // TODO
-// address print
-void address_print(Address &addr) {
-  if (addr->set != 1) {
-    printf("address %l not set", addr->);
-  } else {
-    printf("%s, %s", addr->name, addr->email);
-  }
-}
+void address_print(Address *addr) { printf("%s, %s", addr->name, addr->email); }
 
-void database_load(Connection &conn) {
-  // TODO: nullptr??
-  if (conn->db == NULL || conn->file == NULL) {
-    printf("Null pointer");
-  }
-
-  // TODO: how to read the file? what is the format?
-  int rc = fread(conn->db, sizeof(database), 1, conn->file);
+void database_load(Connection *conn) {
+  int rc = fread(conn->db, sizeof(Database), 1, conn->file);
   if (rc != 1) {
     printf("Error loading");
   }
 }
 
 // database_open()
-// TODO： ？？ what to do?
-void database_open(FILE &f) {
-  if (f == NULL) {
-    printf("Null file pointer");
+// TODO
+Connection *database_open(const char *filename, char mode) {
+  Connection *conn = malloc(sizeof(Connection));
+  if (!conn) {
+    die("Memory error");
+  }
+  conn->db = malloc(sizeof(Database));
+  if (!conn->db) {
+    die("Memory error");
   }
 
-  Database *db = malloc(sizeof(Database));
-  if (db == NULL) {
-    printf("create db error");
+  if (mode == 'c') {
+    conn->file = fopen(filename, "w");
+  } else {
+    // TODO: diff between `r` and `r+`
+    conn->file = fopen(filename, "r+");
+
+    if (conn->file) {
+      database_load(conn);
+    }
   }
-  Connection *conn = malloc(sizeof(Connection));
-  conn->file = f;
-  conn->db = db;
+
+  // TODO: need to check whether fopen successed!!
+  if (!conn->file) {
+    die("Failed to open the file");
+  }
+
+  return conn;
 }
 
 // close a file and free memory
-int database_close(conn *connection) {
-  if (check_nullptr(connection) == -1) {
-    return -1;
+void database_close(Connection *conn) {
+  if (conn) {
+    if (conn->file) {
+      fclose(conn->file);
+    }
+    if (conn->db) {
+      free(conn->db);
+    }
+    free(conn);
   }
-  free(connection->db);
-  close(connection->files);
-
-  return 1;
 }
 
-// write in database
-int database_write(Address *cur_add, db *cur_db) {
-  if (check_nullptr(cur_db) == -1 or check_nullptr(cur_add) == -1) {
-    return -1;
+void database_write(Connection *conn) {
+  // TODO what does `rewind()` do?
+  if (conn->db) {
+    int rc = fwrite(conn->db, sizeof(Database), 1, conn->file);
+    if (rc != 1) {
+      die("can not write");
+    }
+    rc = fflush(conn->file);
+    if (rc != 1) {
+      die("Can not flush");
+    }
+  } else {
+    die("connection's database is empty");
+    return;
   }
-  cur_db->cur_s += 1;
-  // TOOD: should deep copy?
-  cur_db->addr[cur_db->cur_s] = cur_add;
+}
+
+// TODO: create a cono or db??? what is the purpose
+void database_create(Connection *conn) {
 }
 
 // set in database
-// TODO:wtf is the difference
-
-// create in database
-// TODO: create a cono or db???
-int database_create() {}
-
-void database_set()
-
-    // get in database
-    int database_get(db &cur_db, int idx) {
-  check_nullptr(cur_db);
-  if (idx > MAX_ROW) {
-    printf("index out of bound");
-    // TODO
-    exit(1);
+// TODO: why pass `const char *` instead `char *` here?
+void database_set(int idx, Connection *conn, const char *name, const char *email) {
+  if (conn->db->rows[idx].set != 0) {
+    printf("data not empty, overwrite");
   }
-  printf("User: %s %s with some data: %s", cur_db->addr->last_name,
-         cur_db->addr->first_name, cur_db->addr->some_data)
+  conn->db->rows[idx].set = 1;
+  // TODO: copy string in C??
+  conn->db->rows[idx].email = email;
+  conn->db->rows[idx].name = name;
 }
 
 // delete in database
-int database_delete(db &cur_db) {
-  check_nullptr(cur_db);
-  for (int i = 0; i < cur_db.cur_s; i++) {
-    free(cur_db->addr->some_data);
-    // TODO: DO I need to do this?
-    cur_db->addr = NULL;
-  }
+int database_delete(Connection *conn, int idx) {
+  // TODO: The author created a new addr instead of just set, wht?
+  conn->db->rows[idx].set = 0;
 }
-// list print a database
+
+// TODO
 void database_list() {}
 
 // main() func to test
+int main(int argc, char *argv[]) {
+  if (argc < 3) {
+    printf("Usage: ex17_exer <dbfile> <action> [action params]");
+  }
+}
