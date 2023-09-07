@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_ROW 100
 #define MAX_DATA 512
@@ -118,8 +119,9 @@ void database_set(int idx, Connection *conn, const char *name, const char *email
   }
   conn->db->rows[idx].set = 1;
   // TODO: copy string in C??
-  conn->db->rows[idx].email = email;
-  conn->db->rows[idx].name = name;
+  strcpy(conn->db->rows[idx].email, email);
+  strcpy(conn->db->rows[idx].name, name);
+  // TODO: cation like strncpy?
 }
 
 // delete in database
@@ -135,5 +137,14 @@ void database_list() {}
 int main(int argc, char *argv[]) {
   if (argc < 3) {
     printf("Usage: ex17_exer <dbfile> <action> [action params]");
+  } else {
+    char *filename = argv[1];
+    char action = argv[2][0];
+    Connection *conn = database_open(filename, action);
+
+    switch (action) {
+      case 'c':
+        database_create(conn);
+    }
   }
 }
