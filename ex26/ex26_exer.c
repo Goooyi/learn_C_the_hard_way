@@ -1,4 +1,5 @@
 #include "dbg.h"
+#include <glob.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,11 +8,9 @@
 // #define MAX_FILES 10
 #define MAX_LINE_LENGTH 500
 
-// TODO add `glob` functionality
-int readLogFilePath(const char *logFileList, char ***fileList, int *count);
-// TODO why use const char* is bad here?
-int argparser(const int argc, const char* argv[], const int logicOr, char ***words, const int count);
-int searchFiles(const char *FilePath, const char ***words, int NumWords, const int logicOr);
+int readLogFilePath(const char *logFileList, glob_t *pglob);
+int argparser(const int argc, char **argv[], const int logicOr, char ***words, const int count);
+int searchFiles(const char *FilePath, char ***words, int NumWords, const int logicOr);
 
 int main(int argc, char *argv[]) {
     if (argc == 1 || (argc == 2 && strcmp(argv[1], "-o") == 0)) {
@@ -22,21 +21,20 @@ int main(int argc, char *argv[]) {
     int count = argc - 1 - logicOr;
     int i;
     int rc;
-    int fileCount;
-    char ** fileList;
-    char *logFileList = "./logfind";
+    glob_t pglob;
+    char *logFileList = ".logfind";
     char **words = NULL;
     FILE *curFile;
 
-    rc = readLogFilePath(logFileList, &fileList, &fileCount);
+    rc = readLogFilePath(logFileList, &pglob);
     check(rc != -1, "Failed to read %s", logFileList);
-    rc = argparser(argc, argv, logicOr, &words, count);
-    check(rc != -1, "Failed to read %s", logFileList);
+    rc = argparser(argc, &argv, logicOr, &words, count);
+    check(rc != -1, "Failed parse arguments");
 
-    for (i = 0; i < fileCount; i++) {
-        curFile = fopen(fileList[i], "r");
-        check(curFile, "Failed to open %s.", fileList[i]);
-        searchFiles(fileList[i], &words, count, logicOr);
+    for (i = 0; i < pglob.gl_pathc; i++) {
+        curFile = fopen(pglob.gl_pathv[i], "r");
+        check(curFile, "Failed to open %s.", pglob.gl_pathv[i]);
+        searchFiles(pglob.gl_pathv[i], &words, count, logicOr);
         fclose(curFile);
     }
 
@@ -46,42 +44,31 @@ int main(int argc, char *argv[]) {
     }
     free(words);
 
-    // Free the memory allocated for each line
-    for (i = 0; i < fileCount; i++) {
-        free(fileList[i]);
-    }
-    // Free the memory allocated for the lines array
-    free(fileList);
+    // Free the memory for glob
+    globfree(&pglob);
     return 0;
 
 error:
     return -1;
 }
 
-int readLogFilePath(const char *logFileList, char ***fileList, int *count) {
+int readLogFilePath(const char *logFileList, glob_t *pglob) {
+    int glob_flag = GLOB_TILDE;
+    int rc = -1;
     FILE *readLogFiles = fopen(logFileList, "r");
     check(readLogFiles, "Failed to open %s.", logFileList);
 
-    // count the number of lines
-    char ch;
-    while((ch = fgetc(readLogFiles)) != EOF) {
-        if(ch == '\n') {
-            (*count)++;
-        }
-    }
-    // Reset the file position to the beginning
-    fseek(readLogFiles, 0, SEEK_SET);
-
-    *fileList = (char **)malloc(*count * sizeof(char *));
-    check(*fileList, "Failed to malloc");
-
-    // save each line, dynamic decide their len
     char buffer[MAX_LINE_LENGTH];
-    int i = 0;
+    // TODO MAX_LINE_LENGTH - 1??
     while(fgets(buffer, MAX_LINE_LENGTH, readLogFiles) != NULL) {
-        (*fileList)[i] = (char *)malloc((strlen(buffer) + 1) * sizeof(char));
-        strcpy((*fileList[i]), buffer);
-        ++i;
+        // TODO change ending `/n`
+        rc = glob(buffer, glob_flag, NULL, pglob);
+        check(rc == 0 || rc == GLOB_NOMATCH, "glob error");
+
+        // TODO: why?
+        if (glob_flag == GLOB_TILDE) {
+            glob_flag |= GLOB_APPEND;
+        }
     }
 
     fclose(readLogFiles);
@@ -94,23 +81,23 @@ error:
     return -1;
 }
 
-// TODO:pass by pointer not the whole value
-int argparser(const int argc, const char* argv[], const int logicOr, char ***words, const int count) {
+int argparser(const int argc, char **argv[], const int logicOr, char ***words, const int count) {
     int start = 1 + logicOr;
     int i;
-    *words = (char**)malloc(count * sizeof(char*));
+    (*words) = (char**)malloc(count * sizeof(char*));
     check(*words, "malloc faield");
     for (i = 0; i < count; ++i) {
-        (*words)[i] = (char *)malloc(strlen(argv[i+start]) * sizeof(char));
+        (*words)[i] = (char *)malloc((strlen((*argv)[i+start]) + 1) * sizeof(char));
         check((*words)[i], "malloc failed");
-        strcpy((*words)[i], argv[i+start]);
+        strcpy((*words)[i], (*argv)[i+start]);
     }
+    return 0;
 
 error:
     return -1;
 }
 
-int searchFiles(const char *FilePath, const char ***words, int NumWords, const int logicOr) {
+int searchFiles(const char *FilePath, char ***words, int NumWords, const int logicOr) {
     FILE *file = fopen(FilePath, "r");
     check(file, "fopen failed");
 
@@ -159,6 +146,8 @@ int searchFiles(const char *FilePath, const char ***words, int NumWords, const i
                 break;
             }
         }
+        printf("%d\n", i);
+        printf("%s\n", (*words)[i]);
         printf("Found %s in file %s, line %d, logic is AND", (*words)[i], FilePath, marker[i]);
     } else {
         printf("Wrong Logic! \n");
