@@ -15,6 +15,7 @@ int searchFiles(const char *FilePath, char ***words, int NumWords, const int log
 int main(int argc, char *argv[]) {
     if (argc == 1 || (argc == 2 && strcmp(argv[1], "-o") == 0)) {
         log_err("Nothing to find, please give keyword.");
+        return 0;
     }
 
     int logicOr = (strcmp(argv[1], "-o") == 0)? 1 : 0;
