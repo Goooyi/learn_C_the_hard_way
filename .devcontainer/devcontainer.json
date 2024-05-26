@@ -17,9 +17,13 @@
 	"customizations": {
 		// Configure properties specific to VS Code.
 		"vscode": {
-			"settings": {},
 			"extensions": [
-				"streetsidesoftware.code-spell-checker"
+				"llvm-vs-code-extensions.vscode-clangd",
+				"twxs.cmake",
+				"ms-vscode.cmake-tools",
+				"vadimcn.vscode-lldb",
+				"CS128.cs128-clang-tidy",
+				"formulahendry.code-runner"
 			]
 		}
 	},
