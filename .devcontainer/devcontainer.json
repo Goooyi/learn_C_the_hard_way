@@ -22,8 +22,7 @@
 				"twxs.cmake",
 				"ms-vscode.cmake-tools",
 				"vadimcn.vscode-lldb",
-				"CS128.cs128-clang-tidy",
-				"formulahendry.code-runner"
+				"CS128.cs128-clang-tidy"
 			]
 		}
 	},
